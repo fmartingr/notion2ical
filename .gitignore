@@ -21,3 +21,6 @@ dist/
 # Editors
 *~
 .vscode
+
+# Local development
+.env
