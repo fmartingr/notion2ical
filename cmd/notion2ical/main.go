@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/fmartingr/notion2ical/internal/notion"
 	"github.com/fmartingr/notion2ical/internal/server"
 	"go.uber.org/zap"
 )
@@ -22,9 +23,14 @@ func main() {
 		}
 	}()
 
+	config := server.ParseServerConfiguration(ctx, logger)
+
+	notionClient := notion.NewNotionClient(config.Notion.IntegrationToken)
+
 	server := server.NewServer(
 		logger,
-		server.ParseServerConfiguration(ctx, logger),
+		config,
+		notionClient,
 	)
 
 	if err := server.Start(ctx); err != nil {

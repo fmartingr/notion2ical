@@ -3,13 +3,15 @@ package server
 import (
 	"context"
 	"errors"
-	"net/http"
+	stdlibHttp "net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	internalModels "github.com/fmartingr/notion2ical/internal/models"
+	"github.com/fmartingr/notion2ical/internal/notion"
+	"github.com/fmartingr/notion2ical/internal/server/http"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +29,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	if s.config.Http.Enabled {
 		go func() {
-			if err := s.Http.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			if err := s.Http.Start(ctx); err != nil && !errors.Is(err, stdlibHttp.ErrServerClosed) {
 				s.logger.Fatal("error starting server", zap.Error(err))
 			}
 		}()
@@ -53,19 +55,19 @@ func (s *Server) Stop() {
 	defer cancel()
 
 	if s.config.Http.Enabled {
-		if err := s.Http.Stop(shuwdownContext); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := s.Http.Stop(shuwdownContext); err != nil && !errors.Is(err, stdlibHttp.ErrServerClosed) {
 			s.logger.Fatal("error shutting down http server", zap.Error(err))
 		}
 	}
 }
 
-func NewServer(logger *zap.Logger, conf *ServerConfig) *Server {
+func NewServer(logger *zap.Logger, conf *ServerConfig, notionClient *notion.NotionClient) *Server {
 	server := &Server{
 		logger: logger,
 		config: conf,
 	}
 	if conf.Http.Enabled {
-		server.Http = NewHttpServer(logger, conf.Http.Port)
+		server.Http = http.NewHttpServer(logger, conf.Http.Port, notionClient)
 	}
 
 	return server
