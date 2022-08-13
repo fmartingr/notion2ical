@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "golang-app-template.fullname" . }}
+  name: {{ include "notion2ical.fullname" . }}
   labels:
-    {{- include "golang-app-template.labels" . | nindent 4 }}
+    {{- include "notion2ical.labels" . | nindent 4 }}
 spec:
-  serviceName: {{ include "golang-app-template.fullname" . }}
+  serviceName: {{ include "notion2ical.fullname" . }}
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "golang-app-template.selectorLabels" . | nindent 6 }}
+      {{- include "notion2ical.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,13 +19,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "golang-app-template.selectorLabels" . | nindent 8 }}
+        {{- include "notion2ical.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "golang-app-template.serviceAccountName" . }}
+      serviceAccountName: {{ include "notion2ical.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

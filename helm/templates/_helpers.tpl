@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "golang-app-template.name" -}}
+{{- define "notion2ical.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "golang-app-template.fullname" -}}
+{{- define "notion2ical.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "golang-app-template.chart" -}}
+{{- define "notion2ical.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "golang-app-template.labels" -}}
-helm.sh/chart: {{ include "golang-app-template.chart" . }}
-{{ include "golang-app-template.selectorLabels" . }}
+{{- define "notion2ical.labels" -}}
+helm.sh/chart: {{ include "notion2ical.chart" . }}
+{{ include "notion2ical.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "golang-app-template.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "golang-app-template.name" . }}
+{{- define "notion2ical.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "notion2ical.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "golang-app-template.serviceAccountName" -}}
+{{- define "notion2ical.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "golang-app-template.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "notion2ical.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

@@ -3,13 +3,13 @@
 ## Install the chart
 
 ```
-helm install --namespace golang-app-template --atomic  golang-app-template .
+helm install --namespace notion2ical --atomic  notion2ical .
 ```
 
 ## Upgrading the chart
 
 ```
-helm upgrade --namespace golang-app-template --atomic golang-app-template .
+helm upgrade --namespace notion2ical --atomic notion2ical .
 ```
 
 ## Using locally with latest dev image

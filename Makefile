@@ -1,4 +1,4 @@
-PROJECT_NAME := golang-app-template
+PROJECT_NAME := notion2ical
 
 SOURCE_FILES ?=./internal/... ./cmd/... ./pkg/...
 
@@ -61,6 +61,7 @@ clean: ###  clean test cache, build files
 	$(info: Make: Clean)
 	@rm -rf ${BUILDS_PATH}
 	@go clean ${CLEAN_OPTIONS}
+	@docker buildx rm -f ${PROJECT_NAME}_builder
 
 .PHONY: build
 build: clean ### builds the project for the setup os/arch combinations

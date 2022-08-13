@@ -1,3 +1,3 @@
-module github.com/fmartingr/golang-app-template
+module github.com/fmartingr/notion2ical
 
 go 1.19

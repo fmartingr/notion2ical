@@ -1,1 +1,1 @@
-# golang-app-template
+# notion2ical
