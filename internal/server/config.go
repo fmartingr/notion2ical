@@ -46,6 +46,9 @@ type ServerConfig struct {
 		Port    int  `env:"HTTP_PORT,default=8080"`
 	}
 	LogLevel string `env:"LOG_LEVEL,default=info"`
+	Notion   struct {
+		IntegrationToken string `env:"NOTION_INTEGRATION_TOKEN"`
+	}
 }
 
 func ParseServerConfiguration(ctx context.Context, logger *zap.Logger) *ServerConfig {
