@@ -66,7 +66,10 @@ type Config struct {
 	}
 	Routes struct {
 		Calendar struct {
-			CacheExpiration time.Duration `env:"ROUTES_CACHE_EXPIRATION,default=24h"`
+			CacheExpiration   time.Duration `env:"ROUTES_CACHE_EXPIRATION,default=24h"`
+			CacheControl      bool          `env:"ROUTES_CACHE_CONTROL,default=true"`
+			LimiterMaxRequest int           `env:"ROUTES_CALENDAR_LIMITER_MAX_REQUESTS,default=2"`
+			LimiterExpiration time.Duration `env:"ROUTES_CALENDAR_LIMITER_DURATION,default=1s"`
 		}
 		Static struct {
 			Path   string        `env:"ROUTES_STATIC_PATH,default=/static"`

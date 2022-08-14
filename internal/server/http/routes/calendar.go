@@ -3,7 +3,7 @@ package routes
 import (
 	"bytes"
 	"net/url"
-	"time"
+	"strings"
 
 	"github.com/emersion/go-ical"
 	"github.com/fmartingr/notion2ical/internal/config"
@@ -21,28 +21,18 @@ type CalendarRoutes struct {
 	notion         *notionClient.NotionClient
 	publicHostname string
 	thanksMessage  string
+
+	limiterHandler fiber.Handler
+	cacheHandler   fiber.Handler
 }
 
 func (r *CalendarRoutes) Setup() *CalendarRoutes {
 	r.router.
-		Use(limiter.New(limiter.Config{
-			Max:        2,
-			Expiration: time.Second,
-			// LimitReached: func(c *fiber.Ctx) error {
-			// 	return c.SendFile("./toofast.html")
-			// },
-		})).
+		Use(r.limiterHandler).
 		Post("/wizard", r.wizardHandler).
 		Post("/download", r.downloadHandler).
 		Get("/", r.indexHandler).
-		Use(cache.New(cache.Config{
-			Expiration:   24 * time.Hour,
-			CacheControl: true,
-			CacheHeader:  "X-Cache",
-			KeyGenerator: func(c *fiber.Ctx) string {
-				return utils.CopyString(c.Path() + string(c.Context().QueryArgs().QueryString()))
-			},
-		})).
+		Use(r.cacheHandler).
 		Get("/calendar.ics", r.calendarIcsHandler)
 	return r
 }
@@ -157,7 +147,7 @@ func (r *CalendarRoutes) calendarIcsHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	// c.Set("Content-Type", "text/calendar")
+	c.Set("Content-Type", "text/calendar")
 	return c.Send(buf.Bytes())
 }
 
@@ -168,6 +158,28 @@ func NewCalendarRoutes(logger *zap.Logger, cfg *config.Config) *CalendarRoutes {
 		router:         fiber.New(),
 		publicHostname: cfg.Http.PublicHostname,
 		thanksMessage:  cfg.Branding.ThanksMessage,
+		limiterHandler: limiter.New(limiter.Config{
+			Max:        cfg.Routes.Calendar.LimiterMaxRequest,
+			Expiration: cfg.Routes.Calendar.LimiterExpiration,
+		}),
+		cacheHandler: cache.New(cache.Config{
+			Expiration:   cfg.Routes.Calendar.CacheExpiration,
+			CacheControl: cfg.Routes.Calendar.CacheControl,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				args := c.Context().QueryArgs()
+				params := []string{
+					"database_id",
+					string(args.Peek("database_id")),
+					"all_day_events",
+					string(args.Peek("all_day_events")),
+					"date_property",
+					string(args.Peek("date_property")),
+					"name_propety",
+					string(args.Peek("name_propety")),
+				}
+				return utils.CopyString(c.Path() + strings.Join(params, "-"))
+			},
+		}),
 	}
 	routes.Setup()
 	return &routes
