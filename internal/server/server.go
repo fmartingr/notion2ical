@@ -9,15 +9,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/fmartingr/notion2ical/internal/config"
 	internalModels "github.com/fmartingr/notion2ical/internal/models"
-	"github.com/fmartingr/notion2ical/internal/notion"
 	"github.com/fmartingr/notion2ical/internal/server/http"
 	"go.uber.org/zap"
 )
 
 type Server struct {
 	Http   internalModels.Server
-	config *ServerConfig
+	config *config.Config
 	logger *zap.Logger
 
 	cancel context.CancelFunc
@@ -61,13 +61,13 @@ func (s *Server) Stop() {
 	}
 }
 
-func NewServer(logger *zap.Logger, conf *ServerConfig, notionClient *notion.NotionClient) *Server {
+func NewServer(logger *zap.Logger, cfg *config.Config) *Server {
 	server := &Server{
 		logger: logger,
-		config: conf,
+		config: cfg,
 	}
-	if conf.Http.Enabled {
-		server.Http = http.NewHttpServer(logger, conf.Http.Port, notionClient)
+	if cfg.Http.Enabled {
+		server.Http = http.NewHttpServer(logger, cfg)
 	}
 
 	return server

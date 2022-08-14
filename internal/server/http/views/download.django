@@ -1,0 +1,10 @@
+{% extends "base.django" %}
+
+{% block content %}
+<div>
+    <p>You calendar is ready!</p>
+    <p>Now you can <a href="{{ calendarICSUrl }}"><b>download your calendar as an.ICS file</b></a> or subscribe to it using the following URL:</p>
+    <p><pre>{{ calendarSubscriptionUrl }}</pre></p>
+    <p>{{ thanksMessage }}<p>
+</div>
+{% endblock %}

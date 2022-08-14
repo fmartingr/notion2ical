@@ -1,0 +1,38 @@
+{% extends "base.django" %}
+
+{% block content %}
+<div class="text-center">
+    <p>
+        We are going to setup a calendar for the <b>{{ databaseName }}</b> database.
+    </p>
+    <form action="/download" method="post">
+        <p>
+            <label for="name_property">Select the property that will be used as event name:</label>
+            <select name="name_property">
+                {% for name in textProperties %}
+                <option selected="selected" value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <label for="date_property">Select the property that will be used as event date:</label>
+            <select name="date_property">
+                {% for name in datetimeProperties %}
+                <option selected="selected" value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+        </p>
+
+        <p>
+            <label>
+                <input type="checkbox" id="checkbox" name="all_day_events" value="true">
+                Always create all-day events.
+            </label>
+            <em>Otherwise we will <u>try</u> to use a Start/End date from the property selected above.</em>
+        </p>
+
+        <input type="hidden" name="database_id" value="{{ databaseID }}" />
+        <button type="submit">Generate calendar</button>
+    </form>
+</div>
+{% endblock %}

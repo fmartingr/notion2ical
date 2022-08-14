@@ -3,15 +3,17 @@ package http
 import (
 	"context"
 	"fmt"
-	"time"
+	"net/http"
 
-	notionClient "github.com/fmartingr/notion2ical/internal/notion"
+	"github.com/fmartingr/notion2ical/internal/config"
 	"github.com/fmartingr/notion2ical/internal/server/http/middleware"
+	"github.com/fmartingr/notion2ical/internal/server/http/routes"
+	"github.com/fmartingr/notion2ical/internal/server/http/views"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cache"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/fiber/v2/utils"
+	"github.com/gofiber/template/django"
 	"go.uber.org/zap"
 )
 
@@ -19,10 +21,9 @@ type HttpServer struct {
 	http   *fiber.App
 	addr   string
 	logger *zap.Logger
-	routes *routes
 }
 
-func (s *HttpServer) Setup() {
+func (s *HttpServer) Setup(cfg *config.Config) {
 	s.http.
 		Use(requestid.New(requestid.Config{
 			Generator: utils.UUIDv4,
@@ -31,20 +32,10 @@ func (s *HttpServer) Setup() {
 			Logger:      s.logger,
 			CacheHeader: "X-Cache",
 		})).
-		Use(cache.New(cache.Config{
-			Next: func(c *fiber.Ctx) bool {
-				return c.Query("refresh") == "true"
-			},
-			Expiration:   60 * time.Minute,
-			CacheControl: true,
-			CacheHeader:  "X-Cache",
-			// KeyGenerator: func(c *fiber.Ctx) string {
-			// 	return utils.CopyString(c.Path() + string(c.Context().QueryArgs().QueryString()))
-			// },
-		})).
 		Use(recover.New()).
-		Static("/", "./public").
-		Mount("/", s.routes.Router()).
+		Mount(cfg.Routes.System.Path, routes.NewSystemRoutes(s.logger, cfg).Setup().Router()).
+		Mount(cfg.Routes.Static.Path, routes.NewStaticRoutes(s.logger, cfg).Setup().Router()).
+		Mount("/", routes.NewCalendarRoutes(s.logger, cfg).Setup().Router()).
 		Use(s.notFound)
 }
 
@@ -62,12 +53,27 @@ func (s *HttpServer) notFound(c *fiber.Ctx) error {
 	return c.SendStatus(404)
 }
 
-func NewHttpServer(logger *zap.Logger, port int, notionClient *notionClient.NotionClient) *HttpServer {
+func NewHttpServer(logger *zap.Logger, cfg *config.Config) *HttpServer {
+	engine := django.NewFileSystem(http.FS(views.Assets), ".django")
+	engine.AddFunc("static", func(path interface{}) string {
+		if s, ok := path.(string); ok {
+			return cfg.Routes.Static.Path + s
+		}
+		return cfg.Routes.Static.Path
+	})
 	server := HttpServer{
 		logger: logger,
-		addr:   fmt.Sprintf(":%d", port),
-		routes: newRoutes(logger, notionClient),
+		addr:   fmt.Sprintf(":%d", cfg.Http.Port),
 		http: fiber.New(fiber.Config{
+			AppName:                      "notion2ical",
+			PassLocalsToViews:            true,
+			Views:                        engine,
+			BodyLimit:                    cfg.Http.BodyLimit,
+			ReadTimeout:                  cfg.Http.ReadTimeout,
+			WriteTimeout:                 cfg.Http.WriteTimeout,
+			IdleTimeout:                  cfg.Http.IDLETimeout,
+			DisableKeepalive:             cfg.Http.DisableKeepAlive,
+			DisablePreParseMultipartForm: cfg.Http.DisablePreParseMultipartForm,
 			ErrorHandler: func(c *fiber.Ctx, err error) error {
 				logger.Error(
 					"handler error",
@@ -79,7 +85,7 @@ func NewHttpServer(logger *zap.Logger, port int, notionClient *notionClient.Noti
 			},
 		}),
 	}
-	server.Setup()
+	server.Setup(cfg)
 
 	return &server
 }
