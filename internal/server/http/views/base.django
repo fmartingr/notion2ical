@@ -21,6 +21,7 @@
         <a href="https://github.com/fmartingr/notion2ical">Open source</a> |
         <a href="">Service Status</a> |
         <a href="https://fmartingr.com/about/">Contact</a>
+        {% if branding_footer_extra %}| {{ branding_footer_extra }}{% endif %}
     </footer>
 
 </body>

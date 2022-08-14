@@ -6,6 +6,8 @@
         We are going to setup a calendar for the <b>{{ databaseName }}</b> database.
     </p>
     <form action="/download" method="post">
+
+        <h3>1.</h3>
         <p>
             <label for="name_property">Select the property that will be used as event name:</label>
             <select name="name_property">
@@ -14,6 +16,8 @@
                 {% endfor %}
             </select>
         </p>
+
+        <h3>2.</h3>
         <p>
             <label for="date_property">Select the property that will be used as event date:</label>
             <select name="date_property">
@@ -31,6 +35,7 @@
             <em>Otherwise we will <u>try</u> to use a Start/End date from the property selected above.</em>
         </p>
 
+        <h3>3.</h3>
         <input type="hidden" name="database_id" value="{{ databaseID }}" />
         <button type="submit">Generate calendar</button>
     </form>

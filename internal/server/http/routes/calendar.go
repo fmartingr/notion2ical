@@ -20,7 +20,6 @@ type CalendarRoutes struct {
 	router         *fiber.App
 	notion         *notionClient.NotionClient
 	publicHostname string
-	thanksMessage  string
 
 	limiterHandler fiber.Handler
 	cacheHandler   fiber.Handler
@@ -91,7 +90,6 @@ func (r *CalendarRoutes) downloadHandler(c *fiber.Ctx) error {
 	}
 
 	return c.Render("download", fiber.Map{
-		"thanksMessage":           r.thanksMessage,
 		"calendarSubscriptionUrl": r.publicHostname + "/calendar.ics?" + string(c.Request().Body()),
 		"calendarICSUrl":          r.publicHostname + "/calendar.ics?" + string(c.Request().Body()),
 	})
@@ -157,7 +155,6 @@ func NewCalendarRoutes(logger *zap.Logger, cfg *config.Config) *CalendarRoutes {
 		notion:         cfg.Notion.Client,
 		router:         fiber.New(),
 		publicHostname: cfg.Http.PublicHostname,
-		thanksMessage:  cfg.Branding.ThanksMessage,
 		limiterHandler: limiter.New(limiter.Config{
 			Max:        cfg.Routes.Calendar.LimiterMaxRequest,
 			Expiration: cfg.Routes.Calendar.LimiterExpiration,

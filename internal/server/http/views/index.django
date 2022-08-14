@@ -3,12 +3,12 @@
 {% block content %}
 <div class="text-center">
     <p>
-        Online tool to convert a Notion database into an iCalendar subscripbable URL or downloadable ICS file.
+        Online tool to convert a Notion database into an iCalendar subscription URL or downloadable ICS file.
     </p>
     <h2 id="how-it-works">How it works</h2>
     <h3>1.</h3>
     <p>
-        Give access to Notion2iCal to your notion database by using the <kbd>Share</kbd> button
+        Give access to Notion2iCal to your Notion database by using the <kbd>Share</kbd> button
         on the top right of your database and searching for <i>Notion2iCal</i>. Only read permissions
         are required.
     </p>
@@ -18,7 +18,7 @@
     <form action="/wizard" method="post">
         <h3>2.</h3>
         <p>
-            <label>After giving access, paste your database URL here to start the Wizard</label>
+            <label>After giving access, paste your Notion database URL here to setup your calendar.</label>
             <input type="url" name="database_url" placeholder="https://notion.so/workspace/...">
         </p>
 

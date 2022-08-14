@@ -3,9 +3,10 @@
 {% block content %}
 <div>
     <p>You calendar is ready!</p>
-    <p>Now you can <a href="{{ calendarICSUrl }}"><b>download your calendar as an.ICS file</b></a> or subscribe to it using the following URL:</p>
+    <p>You can download it <a href="{{ calendarICSUrl }}"><b>by clicking here</b></a> to have an offline copy, or you can subscribe using your favourite calendar client using the following URL:</p>
     <p><pre>{{ calendarSubscriptionUrl }}</pre></p>
-    <p>{{ thanksMessage }}<p>
-    <p><a href="/">Go back home</a></p>
+    <p>Note that calendars <b>are cached for {{ calendar_cache_time }}</b> so please set up your refresh interval accordingly.</p>
+    <p>{{ branding_thanks_message }}<p>
+    <p><a href="/">Go back to the index</a></p>
 </div>
 {% endblock %}

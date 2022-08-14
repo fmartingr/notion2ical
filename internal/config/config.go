@@ -56,7 +56,8 @@ type Config struct {
 		DisablePreParseMultipartForm bool          `env:"HTTP_DISABLE_PARSE_MULTIPART_FORM,default=true"`
 	}
 	Branding struct {
-		ThanksMessage string `env:"BRANDING_THANKS_MESSAGE"`
+		ThanksMessage      string `env:"BRANDING_THANKS_MESSAGE"`
+		FooterExtraMessage string `env:"BRANDING_FOOTER_EXTRA"`
 	}
 	LogLevel string `env:"LOG_LEVEL,default=info"`
 	Notion   struct {

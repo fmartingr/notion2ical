@@ -32,6 +32,12 @@ func (s *HttpServer) Setup(cfg *config.Config) {
 			Logger:      s.logger,
 			CacheHeader: "X-Cache",
 		})).
+		Use(func(c *fiber.Ctx) error {
+			c.Locals("branding_thanks_message", cfg.Branding.ThanksMessage)
+			c.Locals("branding_footer_extra", cfg.Branding.FooterExtraMessage)
+			c.Locals("calendar_cache_time", cfg.Routes.Calendar.CacheExpiration.String())
+			return c.Next()
+		}).
 		Use(recover.New()).
 		Mount(cfg.Routes.System.Path, routes.NewSystemRoutes(s.logger, cfg).Setup().Router()).
 		Mount(cfg.Routes.Static.Path, routes.NewStaticRoutes(s.logger, cfg).Setup().Router()).
