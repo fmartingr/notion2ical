@@ -8,6 +8,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	IntegrationTypeInternal = "internal"
+	IntegrationTypePublic   = "public"
+)
+
 type NotionClient struct {
 	Client *notion.Client
 	logger *zap.Logger
