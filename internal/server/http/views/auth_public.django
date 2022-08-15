@@ -1,0 +1,10 @@
+<h3>1.</h3>
+<p>First, you need to authenticate youself with Notion2iCal, you will authorize the application within your workspace and then you will select to which databases Notion2iCal can read individually.</p>
+<p><img src="{{ static("/images/usage-public.png") }}" srcset="{{ static("/images/usage-public@2x.png") }} 2x" /><p>
+<form action="https://api.notion.com/v1/oauth/authorize" method="get">
+    <input type="hidden" name="owner" value="user" />
+    <input type="hidden" name="response_type" value="code" />
+    <input type="hidden" name="client_id" value="{{ notion_oauth_id }}" />
+    <input type="hidden" name="redirect_url" value="http://localhost:8080" />
+    <button type="submit">Authorize Notion2iCal</button>
+</form>
