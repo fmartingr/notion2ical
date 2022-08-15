@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -61,7 +62,10 @@ type Config struct {
 	}
 	LogLevel string `env:"LOG_LEVEL,default=info"`
 	Notion   struct {
-		IntegrationToken string               `env:"NOTION_INTEGRATION_TOKEN,required"`
+		IntegrationType  string               `env:"NOTION_INTEGRATION_TYPE,required"`
+		IntegrationToken string               `env:"NOTION_INTEGRATION_TOKEN"`
+		OAuthID          string               `env:"NOTION_OAUTH_ID"`
+		OAuthSecret      string               `env:"NOTION_OAUTH_SECRET"`
 		MaxPagination    int                  `env:"NOTION_MAX_PAGINATION,default=2"`
 		Client           *notion.NotionClient // Must be manually set up
 	}
@@ -82,6 +86,22 @@ type Config struct {
 	}
 }
 
+func (c Config) Validate() error {
+	if c.Notion.IntegrationType != notion.IntegrationTypeInternal && c.Notion.IntegrationType != notion.IntegrationTypePublic {
+		return fmt.Errorf("Notion's integration type should be %s or %s", notion.IntegrationTypeInternal, notion.IntegrationTypePublic)
+	}
+
+	if c.Notion.IntegrationType == notion.IntegrationTypeInternal && c.Notion.IntegrationToken == "" {
+		return fmt.Errorf("Notion internal integration requires setting up the integration token")
+	}
+
+	if c.Notion.IntegrationType == notion.IntegrationTypePublic && c.Notion.OAuthID == "" && c.Notion.OAuthSecret == "" {
+		return fmt.Errorf("Notion's public integration requires setting up the OAuth credentials")
+	}
+
+	return nil
+}
+
 func ParseServerConfiguration(ctx context.Context, logger *zap.Logger) *Config {
 	var cfg Config
 
@@ -93,6 +113,10 @@ func ParseServerConfiguration(ctx context.Context, logger *zap.Logger) *Config {
 	)
 	if err := envconfig.ProcessWith(ctx, &cfg, lookuper); err != nil {
 		logger.Fatal("Error parsing configuration: %s", zap.Error(err))
+	}
+
+	if err := cfg.Validate(); err != nil {
+		logger.Fatal("Error validating configuration: %s", zap.Error(err))
 	}
 
 	return &cfg
