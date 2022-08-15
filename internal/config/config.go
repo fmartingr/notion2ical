@@ -43,6 +43,7 @@ func readDotEnv(logger *zap.Logger) map[string]string {
 
 type Config struct {
 	Hostname string `env:"HOSTNAME,required"`
+	LogLevel string `env:"LOG_LEVEL,default=info"`
 	Http     struct {
 		Enabled        bool   `env:"HTTP_ENABLED,default=True"`
 		Port           int    `env:"HTTP_PORT,default=8080"`
@@ -59,8 +60,7 @@ type Config struct {
 		ThanksMessage      string `env:"BRANDING_THANKS_MESSAGE"`
 		FooterExtraMessage string `env:"BRANDING_FOOTER_EXTRA"`
 	}
-	LogLevel string `env:"LOG_LEVEL,default=info"`
-	Notion   struct {
+	Notion struct {
 		IntegrationToken string               `env:"NOTION_INTEGRATION_TOKEN,required"`
 		MaxPagination    int                  `env:"NOTION_MAX_PAGINATION,default=2"`
 		Client           *notion.NotionClient // Must be manually set up
