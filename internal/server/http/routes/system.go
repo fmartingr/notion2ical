@@ -1,35 +1,19 @@
 package routes
 
 import (
-	"github.com/fmartingr/notion2ical/internal/config"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
+	"log/slog"
+	"net/http"
+
+	"github.com/fmartingr/notion2ical/internal/models"
 )
 
-type SystemRoutes struct {
-	logger *zap.Logger
-	router *fiber.App
+func (a *API) handleLiveness(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
-func (r *SystemRoutes) Setup() *SystemRoutes {
-	r.router.
-		Get("/liveness", r.livenessHandler)
-	return r
-}
-
-func (r *SystemRoutes) Router() *fiber.App {
-	return r.router
-}
-
-func (r *SystemRoutes) livenessHandler(c *fiber.Ctx) error {
-	return c.SendStatus(200)
-}
-
-func NewSystemRoutes(logger *zap.Logger, _ *config.Config) *SystemRoutes {
-	routes := SystemRoutes{
-		logger: logger,
-		router: fiber.New(),
+func (a *API) handleVersion(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write([]byte(`{"version": "` + models.BuildVersion + `"}`)); err != nil {
+		a.logger.Error("error writing version response", slog.String("err", err.Error()))
 	}
-	routes.Setup()
-	return &routes
 }

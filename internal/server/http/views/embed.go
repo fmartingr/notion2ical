@@ -2,5 +2,5 @@ package views
 
 import "embed"
 
-//go:embed *.django
+//go:embed *.tmpl
 var Assets embed.FS

@@ -3,17 +3,18 @@ package config
 import (
 	"bufio"
 	"context"
+	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/fmartingr/notion2ical/internal/notion"
 	"github.com/sethvargo/go-envconfig"
-	"go.uber.org/zap"
 )
 
 // readDotEnv reads the configuration from variables in a .env file (only for contributing)
-func readDotEnv(logger *zap.Logger) map[string]string {
+func readDotEnv(logger *slog.Logger) map[string]string {
 	file, err := os.Open(".env")
 	if err != nil {
 		return nil
@@ -35,7 +36,7 @@ func readDotEnv(logger *zap.Logger) map[string]string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.Fatal("error reading dotenv", zap.Error(err))
+		logger.Error("error reading dotenv", slog.String("err", err.Error()))
 	}
 
 	return result
@@ -48,13 +49,6 @@ type Config struct {
 		Enabled        bool   `env:"HTTP_ENABLED,default=True"`
 		Port           int    `env:"HTTP_PORT,default=8080"`
 		PublicHostname string `env:"HTTP_PUBLIC_HOSTNAME,required"`
-		// Fiber Specific
-		BodyLimit                    int           `env:"HTTP_BODY_LIMIT,default=1024"`
-		ReadTimeout                  time.Duration `env:"HTTP_READ_TIMEOUT,default=10s"`
-		WriteTimeout                 time.Duration `env:"HTTP_WRITE_TIMEOUT,default=10s"`
-		IDLETimeout                  time.Duration `env:"HTTP_IDLE_TIMEOUT,default=10s"`
-		DisableKeepAlive             bool          `env:"HTTP_DISABLE_KEEP_ALIVE,default=true"`
-		DisablePreParseMultipartForm bool          `env:"HTTP_DISABLE_PARSE_MULTIPART_FORM,default=true"`
 	}
 	Branding struct {
 		ThanksMessage      string `env:"BRANDING_THANKS_MESSAGE"`
@@ -82,7 +76,7 @@ type Config struct {
 	}
 }
 
-func ParseServerConfiguration(ctx context.Context, logger *zap.Logger) *Config {
+func ParseServerConfiguration(ctx context.Context, logger *slog.Logger) (*Config, error) {
 	var cfg Config
 
 	lookuper := envconfig.MultiLookuper(
@@ -91,9 +85,12 @@ func ParseServerConfiguration(ctx context.Context, logger *zap.Logger) *Config {
 		envconfig.PrefixLookuper("NOTION2ICAL_", envconfig.OsLookuper()),
 		envconfig.OsLookuper(),
 	)
-	if err := envconfig.ProcessWith(ctx, &cfg, lookuper); err != nil {
-		logger.Fatal("Error parsing configuration: %s", zap.Error(err))
+	if err := envconfig.ProcessWith(ctx, &envconfig.Config{
+		Target:   &cfg,
+		Lookuper: lookuper,
+	}); err != nil {
+		return nil, fmt.Errorf("error parsing configuration: %w", err)
 	}
 
-	return &cfg
+	return &cfg, nil
 }

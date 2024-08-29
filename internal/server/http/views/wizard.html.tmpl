@@ -1,9 +1,7 @@
-{% extends "base.django" %}
-
-{% block content %}
+{{define "content"}}
 <div class="text-center">
     <p>
-        We are going to setup a calendar for the <b>{{ databaseName }}</b> database.
+        We are going to setup a calendar for the <b>{{ .DatabaseName }}</b> database.
     </p>
     <form action="/download" method="post">
 
@@ -11,9 +9,9 @@
         <p>
             <label for="name_property">Select the property that will be used as event name:</label>
             <select name="name_property">
-                {% for name in textProperties %}
-                <option selected="selected" value="{{ name }}">{{ name }}</option>
-                {% endfor %}
+                {{range .TextProperties}}
+                <option selected="selected" value="{{ . }}">{{ . }}</option>
+                {{end}}
             </select>
         </p>
 
@@ -21,9 +19,9 @@
         <p>
             <label for="date_property">Select the property that will be used as event date:</label>
             <select name="date_property">
-                {% for name in datetimeProperties %}
-                <option selected="selected" value="{{ name }}">{{ name }}</option>
-                {% endfor %}
+                {{range .DatetimeProperties}}
+                <option selected="selected" value="{{ . }}">{{ . }}</option>
+                {{end}}
             </select>
         </p>
 
@@ -36,8 +34,8 @@
         </p>
 
         <h3>3.</h3>
-        <input type="hidden" name="database_id" value="{{ databaseID }}" />
+        <input type="hidden" name="database_id" value="{{ .DatabaseID }}" />
         <button type="submit">Generate calendar</button>
     </form>
 </div>
-{% endblock %}
+{{end}}

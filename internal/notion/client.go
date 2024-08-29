@@ -2,15 +2,15 @@ package notion
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	notion "github.com/dstotijn/go-notion"
-	"go.uber.org/zap"
 )
 
 type NotionClient struct {
 	Client *notion.Client
-	logger *zap.Logger
+	logger *slog.Logger
 
 	// maxPagination the maximum number of pages to retrieve items from the database
 	maxPagination int
@@ -57,14 +57,18 @@ func (c *NotionClient) queryDatabase(ctx context.Context, databaseID, nameProper
 			And: []notion.DatabaseQueryFilter{
 				{
 					Property: dateProperty,
-					Date: &notion.DateDatabaseQueryFilter{
-						IsNotEmpty: true,
+					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
+						Date: &notion.DatePropertyFilter{
+							IsNotEmpty: true,
+						},
 					},
 				},
 				{
 					Property: nameProperty,
-					Text: &notion.TextDatabaseQueryFilter{
-						IsNotEmpty: true,
+					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
+						RichText: &notion.TextPropertyFilter{
+							IsNotEmpty: true,
+						},
 					},
 				},
 			},
@@ -86,7 +90,7 @@ func (c *NotionClient) GetDatabaseItems(ctx context.Context, databaseID, namePro
 		var result notion.DatabaseQueryResponse
 		result, err = c.queryDatabase(ctx, databaseID, nameProperty, dateProperty, currentCursor)
 		if err != nil {
-			c.logger.Error("can't query notion database", zap.Error(err))
+			c.logger.Error("can't query notion database", slog.String("err", err.Error()))
 			return
 		}
 
@@ -125,7 +129,7 @@ func (c *NotionClient) GetDatabaseItems(ctx context.Context, databaseID, namePro
 	return
 }
 
-func NewNotionClient(logger *zap.Logger, maxPagination int, integrationToken string) *NotionClient {
+func NewNotionClient(logger *slog.Logger, maxPagination int, integrationToken string) *NotionClient {
 	return &NotionClient{
 		logger:        logger,
 		Client:        notion.NewClient(integrationToken),

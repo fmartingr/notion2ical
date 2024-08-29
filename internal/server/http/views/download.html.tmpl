@@ -1,0 +1,9 @@
+{{define "content"}}
+<div>
+    <p>You calendar is ready!</p>
+    <p>You can download it <a href="{{ .CalendarICSURL }}"><b>by clicking here</b></a> to have an offline copy, or you can subscribe using your favourite calendar client using the following URL:</p>
+    <p><pre>{{ .CalendarSubscriptionURL }}</pre></p>
+    <p>Note that calendars <b>are cached for {{ .CalendarCacheTime }}</b> so please set up your refresh interval accordingly.</p>
+    <p><a href="/">Go back to the index</a></p>
+</div>
+{{end}}

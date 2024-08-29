@@ -13,6 +13,24 @@ type calendarDownloadPayload struct {
 	NameProperty string `form:"name_property" query:"name_property"`
 }
 
+func (o *calendarDownloadPayload) FromBodyForm(form url.Values) error {
+	o.DatabaseID = form.Get("database_id")
+	o.AllDayEvents = form.Get("all_day_events") == "true"
+	o.DateProperty = form.Get("date_property")
+	o.NameProperty = form.Get("name_property")
+
+	return nil
+}
+
+func (o calendarDownloadPayload) ToURLValues() url.Values {
+	v := url.Values{}
+	v.Set("database_id", o.DatabaseID)
+	v.Set("all_day_events", fmt.Sprintf("%t", o.AllDayEvents))
+	v.Set("date_property", o.DateProperty)
+	v.Set("name_property", o.NameProperty)
+	return v
+}
+
 func (o calendarDownloadPayload) Validate() error {
 	if o.DatabaseID == "" {
 		return fmt.Errorf("Database ID can't be empty")
@@ -30,6 +48,12 @@ type wizardPayload struct {
 	DatabaseURL string `form:"database_url"`
 
 	databaseID string
+}
+
+func (p *wizardPayload) FromBodyForm(form url.Values) error {
+	p.DatabaseURL = form.Get("database_url")
+
+	return nil
 }
 
 func (o *wizardPayload) Validate() error {

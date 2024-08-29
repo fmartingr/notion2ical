@@ -1,6 +1,6 @@
 PROJECT_NAME := notion2ical
 
-SOURCE_FILES ?=./internal/... ./cmd/... ./pkg/...
+SOURCE_FILES ?=./internal/... ./cmd/...
 
 TEST_OPTIONS ?= -v -failfast -race -bench=. -benchtime=100000x -cover -coverprofile=coverage.out
 TEST_TIMEOUT ?=1m
@@ -11,6 +11,9 @@ CGO_ENABLED := 0
 
 BUILDS_PATH := ./dist
 FROM_MAKEFILE := y
+
+OS=$(shell command uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(shell command uname -m)
 
 CONTAINER_RUNTIME := podman
 CONTAINERFILE_NAME := Containerfile
@@ -66,21 +69,24 @@ clean: ###  clean test cache, build files
 .PHONY: build
 build: clean ### builds the project for the setup os/arch combinations
 	$(info: Make: Build)
-	@goreleaser build --rm-dist --snapshot
+	@goreleaser build --clean --snapshot ${GORELEASER_ARGS}
 
 .PHONY: buildx
 buildx:
 	$(info: Make: Buildx)
 	@bash scripts/buildx.sh
 
+.env:
+	echo HTTP_PUBLIC_HOSTNAME=localhost:8080 > .env
+
 .PHONY: quick-run
-quick-run: ### Executes the project using golang
+quick-run: .env ### Executes the project using golang
 	@go run ./cmd/${PROJECT_NAME}/*.go
 
 .PHONY: run
 run: ### Executes the project build locally
-	@make build
-	${BUILDS_PATH}/${PROJECT_NAME}
+	@make build GORELEASER_ARGS=--single-target
+	${BUILDS_PATH}/${PROJECT_NAME}_${OS}_${ARCH}/${PROJECT_NAME}
 
 .PHONY: format
 format: ### Executes the formatting pipeline on the project

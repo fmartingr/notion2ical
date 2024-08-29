@@ -24,3 +24,5 @@ dist/
 
 # Local development
 .env
+
+.DS_Store

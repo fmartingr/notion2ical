@@ -2,123 +2,155 @@ package routes
 
 import (
 	"bytes"
+	"context"
+	"log/slog"
+	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/emersion/go-ical"
-	"github.com/fmartingr/notion2ical/internal/config"
-	notionClient "github.com/fmartingr/notion2ical/internal/notion"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cache"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"github.com/gofiber/fiber/v2/utils"
-	"go.uber.org/zap"
 )
 
-type CalendarRoutes struct {
-	logger         *zap.Logger
-	router         *fiber.App
-	notion         *notionClient.NotionClient
-	publicHostname string
+func (a *API) indexHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
 
-	limiterHandler fiber.Handler
-	cacheHandler   fiber.Handler
+	data := struct {
+		Error       string
+		ExtraHeader string
+	}{
+		Error: r.URL.Query().Get("error"),
+	}
+
+	if err := a.renderTemplate("index.html.tmpl", w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
-func (r *CalendarRoutes) Setup() *CalendarRoutes {
-	r.router.
-		Use(r.limiterHandler).
-		Post("/wizard", r.wizardHandler).
-		Post("/download", r.downloadHandler).
-		Get("/", r.indexHandler).
-		Use(r.cacheHandler).
-		Get("/calendar.ics", r.calendarIcsHandler)
-	return r
-}
-
-func (r *CalendarRoutes) Router() *fiber.App {
-	return r.router
-}
-
-func (r *CalendarRoutes) indexHandler(c *fiber.Ctx) error {
-	return c.Render("index", fiber.Map{
-		"error": c.Query("error"),
-	})
-}
-
-func (r *CalendarRoutes) wizardHandler(c *fiber.Ctx) error {
+func (a *API) wizardHandler(w http.ResponseWriter, r *http.Request) {
 	var payload wizardPayload
-	if err := c.BodyParser(&payload); err != nil {
-		r.logger.Error("error parsing query", zap.String("query", c.Context().QueryArgs().String()))
-		return err
+
+	if err := r.ParseForm(); err != nil {
+		a.logger.Error("error parsing form", slog.String("form", r.Form.Encode()))
+		http.Error(w, "error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	if err := payload.FromBodyForm(r.Form); err != nil {
+		http.Redirect(w, r, "/?error="+url.QueryEscape(err.Error())+"#how-it-works", http.StatusTemporaryRedirect)
+		return
 	}
 
 	if err := payload.Validate(); err != nil {
-		return c.Redirect("/?error="+err.Error()+"#how-it-works", fiber.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/?error="+url.QueryEscape(err.Error())+"#how-it-works", http.StatusTemporaryRedirect)
+		return
 	}
 
-	info, err := r.notion.GetDatabaseInfo(c.Context(), payload.GetDatabaseID())
+	info, err := a.notion.GetDatabaseInfo(context.TODO(), payload.GetDatabaseID())
 	if err != nil {
-		return c.Redirect("/?error=Error getting database information, have you set up the integration properly?#how-it-works", fiber.StatusTemporaryRedirect)
+		a.logger.Error("error getting database inforamtion", slog.String("err", err.Error()))
+		http.Redirect(w, r, "/?error=Error getting database information, have you set up the integration properly?#how-it-works", http.StatusTemporaryRedirect)
+		return
 	}
 
 	if len(info.DateProperties) == 0 {
-		return c.Redirect("/?error=Your database does not have any datetime properties, at least one is required#how-it-works", fiber.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/?error=Your database does not have any properties, at least one is required#how-it-works", http.StatusTemporaryRedirect)
+		return
 	}
 
 	if len(info.TextProperties) == 0 {
-		return c.Redirect("/?error=Your database does not have any text properties, at least one is required#how-it-works", fiber.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/?error=Your database does not have any properties, at least one is required#how-it-works", http.StatusTemporaryRedirect)
+		return
 	}
 
-	return c.Render("wizard", fiber.Map{
-		"textProperties":     info.TextProperties,
-		"datetimeProperties": info.DateProperties,
-		"databaseName":       info.Name,
-		"databaseID":         info.ID,
-	})
+	data := struct {
+		TextProperties     []string
+		DatetimeProperties []string
+		DatabaseName       string
+		DatabaseID         string
+	}{
+		TextProperties:     info.TextProperties,
+		DatetimeProperties: info.DateProperties,
+		DatabaseName:       info.Name,
+		DatabaseID:         info.ID,
+	}
+
+	if err := a.renderTemplate("wizard.html.tmpl", w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
-func (r *CalendarRoutes) downloadHandler(c *fiber.Ctx) error {
+func (a *API) downloadHandler(w http.ResponseWriter, r *http.Request) {
 	var payload calendarDownloadPayload
-	if err := c.BodyParser(&payload); err != nil {
-		r.logger.Error("error parsing query", zap.String("query", c.Context().QueryArgs().String()))
-		return err
+
+	if err := r.ParseForm(); err != nil {
+		a.logger.Error("error parsing form", slog.String("form", r.Form.Encode()))
+		http.Error(w, "error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	if err := payload.FromBodyForm(r.Form); err != nil {
+		http.Redirect(w, r, "/wizard?error="+url.QueryEscape(err.Error()), http.StatusTemporaryRedirect)
+		return
 	}
 
 	if err := payload.Validate(); err != nil {
-		return c.Redirect("/wizard?error="+err.Error(), fiber.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/wizard?error="+url.QueryEscape(err.Error()), http.StatusTemporaryRedirect)
+		return
 	}
 
-	return c.Render("download", fiber.Map{
-		"calendarSubscriptionUrl": r.publicHostname + "/calendar.ics?" + string(c.Request().Body()),
-		"calendarICSUrl":          r.publicHostname + "/calendar.ics?" + string(c.Request().Body()),
-	})
+	data := struct {
+		CalendarSubscriptionURL string
+		CalendarICSURL          string
+		CalendarCacheTime       string
+	}{
+		CalendarSubscriptionURL: a.cfg.Http.PublicHostname + "/calendar.ics?" + payload.ToURLValues().Encode(),
+		CalendarICSURL:          a.cfg.Http.PublicHostname + "/calendar.ics?" + payload.ToURLValues().Encode(),
+		CalendarCacheTime:       a.cfg.Routes.Calendar.CacheExpiration.String(),
+	}
+
+	if err := a.renderTemplate("download.html.tmpl", w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
-func (r *CalendarRoutes) calendarIcsHandler(c *fiber.Ctx) error {
+func (a *API) calendarIcsHandler(w http.ResponseWriter, r *http.Request) {
 	var payload calendarDownloadPayload
-	if err := c.QueryParser(&payload); err != nil {
-		r.logger.Error("error parsing query", zap.String("query", c.Context().QueryArgs().String()))
-		return err
+
+	if err := r.ParseForm(); err != nil {
+		a.logger.Error("error parsing form", slog.String("form", r.Form.Encode()))
+		http.Error(w, "error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	if err := payload.FromBodyForm(r.Form); err != nil {
+		http.Redirect(w, r, "/wizard?error="+url.QueryEscape(err.Error()), http.StatusTemporaryRedirect)
+		return
 	}
 
 	if err := payload.Validate(); err != nil {
-		return c.Redirect("/?error="+err.Error(), fiber.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/wizard?error="+url.QueryEscape(err.Error()), http.StatusTemporaryRedirect)
+		return
 	}
 
-	results, err := r.notion.GetDatabaseItems(c.Context(), payload.DatabaseID, payload.NameProperty, payload.DateProperty)
+	results, err := a.notion.GetDatabaseItems(context.TODO(), payload.DatabaseID, payload.NameProperty, payload.DateProperty)
 	if err != nil {
-		return err
+		a.logger.Error("error getting database items", slog.String("err", err.Error()))
+		http.Error(w, "error getting database items", http.StatusInternalServerError)
+		return
 	}
 
 	cal := ical.NewCalendar()
 	cal.Props.SetText(ical.PropVersion, "2.0")
 	cal.Props.SetText(ical.PropProductID, "-//notion2ical//NONSGML PDA Calendar Version 1.0//EN")
 
-	uri, err := url.Parse(r.publicHostname + c.OriginalURL())
+	uri, err := url.Parse(a.cfg.Http.PublicHostname + "/calendar.ics?" + payload.ToURLValues().Encode())
 	if err != nil {
-		r.logger.Error("error formatting calendar url", zap.Error(err))
-		return err
+		a.logger.Error("error formatting calendar url", slog.String("err", err.Error()))
+		http.Error(w, "error formatting calendar url", http.StatusInternalServerError)
+		return
 	}
 	cal.Props.SetURI(ical.PropURL, uri)
 
@@ -141,43 +173,14 @@ func (r *CalendarRoutes) calendarIcsHandler(c *fiber.Ctx) error {
 
 	var buf bytes.Buffer
 	if err := ical.NewEncoder(&buf).Encode(cal); err != nil {
-		r.logger.Error("error encoding calendar", zap.Error(err))
-		return err
+		a.logger.Error("error encoding calendar", slog.String("err", err.Error()))
+		return
 	}
 
-	c.Set("Content-Type", "text/calendar")
-	return c.Send(buf.Bytes())
-}
+	w.Header().Add("Content-Type", "text/calendar")
+	w.Header().Add("Content-Disposition", "attachment; filename=calendar.ics")
 
-func NewCalendarRoutes(logger *zap.Logger, cfg *config.Config) *CalendarRoutes {
-	routes := CalendarRoutes{
-		logger:         logger,
-		notion:         cfg.Notion.Client,
-		router:         fiber.New(),
-		publicHostname: cfg.Http.PublicHostname,
-		limiterHandler: limiter.New(limiter.Config{
-			Max:        cfg.Routes.Calendar.LimiterMaxRequest,
-			Expiration: cfg.Routes.Calendar.LimiterExpiration,
-		}),
-		cacheHandler: cache.New(cache.Config{
-			Expiration:   cfg.Routes.Calendar.CacheExpiration,
-			CacheControl: cfg.Routes.Calendar.CacheControl,
-			KeyGenerator: func(c *fiber.Ctx) string {
-				args := c.Context().QueryArgs()
-				params := []string{
-					"database_id",
-					string(args.Peek("database_id")),
-					"all_day_events",
-					string(args.Peek("all_day_events")),
-					"date_property",
-					string(args.Peek("date_property")),
-					"name_propety",
-					string(args.Peek("name_propety")),
-				}
-				return utils.CopyString(c.Path() + strings.Join(params, "-"))
-			},
-		}),
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		a.logger.Error("error writing calendar", slog.String("err", err.Error()))
 	}
-	routes.Setup()
-	return &routes
 }
