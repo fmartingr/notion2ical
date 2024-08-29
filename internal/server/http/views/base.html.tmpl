@@ -1,3 +1,4 @@
+{{define "base"}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,25 +6,23 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=320, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ static("/css/simple.min.css") }}" crossorigin="anonymous">
-    <link rel="stylesheet" href="{{ static("/css/style.css") }}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ GetStaticPath "/css/simple.min.css" }}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ GetStaticPath "/css/style.css" }}" crossorigin="anonymous">
     <title>Notion to iCal</title>
 </head>
-
 <body>
     <main>
         <div class="text-center">
             <h1>Notion 2 iCal</h1>
-            {% block content %}{% endblock %}
+            {{ template "content" . }}
         </div>
     </main>
     <footer class="text-center">
         <a href="https://github.com/fmartingr/notion2ical">Open source</a> |
-        <a href="">Service Status</a> |
         <a href="https://fmartingr.com/about/">Contact</a>
-        {% if branding_footer_extra %}| {{ branding_footer_extra }}{% endif %}
     </footer>
 
 </body>
 
 </html>
+{{end}}

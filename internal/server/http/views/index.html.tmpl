@@ -1,6 +1,4 @@
-{% extends "base.django" %}
-
-{% block content %}
+{{define "content"}}
 <div class="text-center">
     <p>
         Online tool to convert a Notion database into an iCalendar subscription URL or downloadable ICS file.
@@ -13,7 +11,7 @@
         are required.
     </p>
     <p>
-        <img src="{{ static("/images/usage.png") }}" srcset="{{ static("/images/usage@2x.png") }} 2x" />
+        <img src="{{ GetStaticPath "/images/usage.png" }}" srcset="{{ GetStaticPath "/images/usage@2x.png" }} 2x" />
     </p>
     <form action="/wizard" method="post">
         <h3>2.</h3>
@@ -23,10 +21,10 @@
         </p>
 
         <h3>3.</h3>
-        {% if error %}
-        <p><mark>ERROR: {{ error }}</mark></p>
-        {% endif %}
+        {{if .Error}}
+        <p><mark>ERROR: {{ .Error }}</mark></p>
+        {{end}}
         <button type="submit">Click here to setup your calendar</button>
     </form>
 </div>
-{% endblock %}
+{{end}}
