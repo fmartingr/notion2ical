@@ -3,9 +3,9 @@ PROJECT_NAME := notion2ical
 SOURCE_FILES ?=./internal/... ./cmd/...
 
 TEST_OPTIONS ?= -v -failfast -race -bench=. -benchtime=100000x -cover -coverprofile=coverage.out
-TEST_TIMEOUT ?=1m
+TEST_TIMEOUT ?= 1m
 
-CLEAN_OPTIONS ?=-modcache -testcache
+CLEAN_OPTIONS ?= -modcache -testcache
 
 CGO_ENABLED := 0
 
@@ -17,12 +17,12 @@ ARCH=$(shell command uname -m)
 
 CONTAINER_RUNTIME := podman
 CONTAINERFILE_NAME := Containerfile
-CONTAINER_ALPINE_VERSION := 3.16
+CONTAINER_ALPINE_VERSION := 3.20
 CONTAINER_SOURCE_URL := "https://github.com/fmartingr/${PROJECT_NAME}"
 CONTAINER_MAINTAINER := "Felipe Martin <me@fmartingr.com>"
 CONTAINER_BIN_NAME := ${PROJECT_NAME}
 
-BUILDX_PLATFORMS := linux/amd64,arm64,linux/arm/v7
+BUILDX_PLATFORMS := linux/amd64,linux/arm64,linux/arm/v7
 
 export PROJECT_NAME
 export FROM_MAKEFILE
@@ -72,7 +72,7 @@ build: clean ### builds the project for the setup os/arch combinations
 	@goreleaser build --clean --snapshot ${GORELEASER_ARGS}
 
 .PHONY: buildx
-buildx:
+buildx: build
 	$(info: Make: Buildx)
 	@bash scripts/buildx.sh
 
